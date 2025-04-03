@@ -20,8 +20,8 @@ let savedTransactionCount = null;
 function showBanner() {
     console.clear();
     console.log(chalk.blueBright(figlet.textSync("LocalSec", { horizontalLayout: "fitted" })));
-    console.log(chalk.greenBright("🔥 Được tạo bởi NT - Exhaust - Phát triển bởi: LocalSec 🔥"));
-    console.log(chalk.greenBright("🔥 https://x.com/Local_sec 🔥\n"));
+    console.log(chalk.greenBright("🔥 Được tạo bởi NT - Exhaust, Phát triển bởi: LocalSec 🔥"));
+    console.log(chalk.greenBright("🔥 LocalSec 🔥\n"));
 }
 
 // Hàm hiển thị thông tin tất cả các ví
@@ -35,7 +35,7 @@ async function showWalletInfo() {
     console.log("");
 }
 
-// Hàm biên dịch và triển khai hợp đồng từ ví đầu tiên
+// Hàm biên dịch và triển khai hợp đồng từ nhiều ví
 async function deployContract() {
     const contractPath = path.resolve("auto.sol");
 
@@ -75,19 +75,30 @@ async function deployContract() {
         return;
     }
 
-    const contractFactory = new ethers.ContractFactory(contractData.abi, contractData.evm.bytecode.object, wallets[0]);
+    console.log(chalk.yellow("⏳ Đang triển khai hợp đồng từ nhiều ví..."));
 
-    console.log(chalk.yellow("⏳ Đang triển khai hợp đồng..."));
-    try {
-        const contract = await contractFactory.deploy("MyToken", "MTK", 1000000, wallets[0].address);
-        await contract.waitForDeployment();
+    for (let i = 0; i < wallets.length; i++) {
+        const wallet = wallets[i];
+        const contractFactory = new ethers.ContractFactory(contractData.abi, contractData.evm.bytecode.object, wallet);
 
-        console.log(chalk.green(`✅ Hợp đồng đã được triển khai! Địa chỉ: ${chalk.blue(await contract.getAddress())}`));
-    } catch (error) {
-        console.log(chalk.red(`❌ Triển khai thất bại: ${error.message}`));
+        console.log(chalk.cyan(`🔹 Triển khai từ ví ${i + 1}: ${wallet.address}`));
+        try {
+            const contract = await contractFactory.deploy("MyToken", "MTK", 1000000, wallet.address);
+            await contract.waitForDeployment();
+
+            console.log(chalk.green(`✅ Hợp đồng đã được triển khai! Địa chỉ: ${chalk.blue(await contract.getAddress())}`));
+        } catch (error) {
+            console.log(chalk.red(`❌ Triển khai từ ví ${wallet.address} thất bại: ${error.message}`));
+        }
+
+        // Đợi 5 giây trước khi triển khai từ ví tiếp theo để tránh quá tải mạng
+        if (i < wallets.length - 1) {
+            console.log(chalk.gray("⌛ Đợi 5 giây trước khi triển khai từ ví tiếp theo...\n"));
+            await new Promise(res => setTimeout(res, 5000));
+        }
     }
 
-    console.log(chalk.greenBright("\n🎉 Hoàn tất triển khai! (Không lặp lại)\n"));
+    console.log(chalk.greenBright("\n🎉 Hoàn tất triển khai từ tất cả các ví!\n"));
     process.exit(0);
 }
 
@@ -140,18 +151,16 @@ async function autoTransaction() {
     }
 
     console.log(chalk.greenBright("\n🎉 Tất cả giao dịch đã hoàn tất!\n"));
-    // Xóa các giá trị đã lưu để yêu cầu nhập lại nếu chạy tiếp
     savedOption = null;
     savedTransactionCount = null;
 
-    // Hỏi người dùng có muốn lặp lại sau 24 giờ không
     const repeat = await askQuestion(chalk.magenta("Bạn có muốn lặp lại sau 24 giờ không? (y/n): "));
     if (repeat.toLowerCase() === "y") {
         console.log(chalk.yellow("⏳ Đợi 24 giờ để chạy lại..."));
         setTimeout(autoTransaction, 24 * 60 * 60 * 1000); // 24 giờ
     } else {
         console.log(chalk.greenBright("👋 Chương trình kết thúc."));
-        process.exit(0); // Thoát chương trình
+        process.exit(0);
     }
 }
 
@@ -169,7 +178,7 @@ async function startProcess() {
     await showWalletInfo();
 
     console.log(chalk.magenta("\nChọn tùy chọn:"));
-    console.log(chalk.yellow("1: Triển khai hợp đồng (Chỉ một lần)"));
+    console.log(chalk.yellow("1: Triển khai hợp đồng từ nhiều ví (Chỉ một lần)"));
     console.log(chalk.yellow("2: Giao dịch tự động"));
 
     const choice = await askQuestion("Chọn: ");
