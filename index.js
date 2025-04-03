@@ -9,28 +9,33 @@ import { exit } from "process";
 dotenv.config();
 
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+// Tải danh sách private keys từ file hoặc biến môi trường
+const privateKeys = process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(",") : fs.readFileSync("wallets.txt", "utf-8").split("\n").map(key => key.trim()).filter(key => key);
+const wallets = privateKeys.map(key => new ethers.Wallet(key.trim(), provider));
 
-let savedOption = null; // Tùy chọn đã lưu
-let savedTransactionCount = null; // Số lượng giao dịch đã lưu
+let savedOption = null;
+let savedTransactionCount = null;
 
 // Hàm hiển thị banner ASCII
 function showBanner() {
     console.clear();
-    console.log(chalk.blueBright(figlet.textSync("LocalSec", { horizontalLayout: "fitted" })));
-    console.log(chalk.greenBright("🔥 Được tạo bởi LocalSec 🔥"));
-    console.log(chalk.greenBright("🔥 https://x.com/Local_sec 🔥\n"));
+    console.log(chalk.blueBright(figlet.textSync("NT - Exhaust", { horizontalLayout: "fitted" })));
+    console.log(chalk.greenBright("🔥 Được tạo bởi NT - Exhaust 🔥"));
+    console.log(chalk.greenBright("🔥 Telegram: https://t.me/@NTExhaust 🔥\n"));
 }
 
-// Hàm lấy và hiển thị thông tin ví
+// Hàm hiển thị thông tin tất cả các ví
 async function showWalletInfo() {
-    const balance = await provider.getBalance(wallet.address);
-    console.log(chalk.yellow("💳 Thông tin ví"));
-    console.log(chalk.cyan(`🔹 Địa chỉ: ${wallet.address}`));
-    console.log(chalk.green(`🔹 Số dư: ${ethers.formatEther(balance)} ETH\n`));
+    console.log(chalk.yellow("💳 Thông tin các ví"));
+    for (let i = 0; i < wallets.length; i++) {
+        const balance = await provider.getBalance(wallets[i].address);
+        console.log(chalk.cyan(`🔹 Ví ${i + 1} - Địa chỉ: ${wallets[i].address}`));
+        console.log(chalk.green(`🔹 Số dư: ${ethers.formatEther(balance)} ETH`));
+    }
+    console.log("");
 }
 
-// Hàm biên dịch và triển khai hợp đồng
+// Hàm biên dịch và triển khai hợp đồng từ ví đầu tiên
 async function deployContract() {
     const contractPath = path.resolve("auto.sol");
 
@@ -70,11 +75,11 @@ async function deployContract() {
         return;
     }
 
-    const contractFactory = new ethers.ContractFactory(contractData.abi, contractData.evm.bytecode.object, wallet);
+    const contractFactory = new ethers.ContractFactory(contractData.abi, contractData.evm.bytecode.object, wallets[0]); // Sử dụng ví đầu tiên
 
     console.log(chalk.yellow("⏳ Đang triển khai hợp đồng..."));
     try {
-        const contract = await contractFactory.deploy("MyToken", "MTK", 1000000, wallet.address);
+        const contract = await contractFactory.deploy("MyToken", "MTK", 1000000, wallets[0].address);
         await contract.waitForDeployment();
 
         console.log(chalk.green(`✅ Hợp đồng đã được triển khai! Địa chỉ: ${chalk.blue(await contract.getAddress())}`));
@@ -86,7 +91,7 @@ async function deployContract() {
     process.exit(0);
 }
 
-// Hàm xử lý các giao dịch tự động
+// Hàm xử lý các giao dịch tự động với nhiều ví
 async function autoTransaction() {
     let option = savedOption;
     let transactionCount = savedTransactionCount;
@@ -111,10 +116,11 @@ async function autoTransaction() {
     console.log(chalk.yellow("\n🚀 Bắt đầu giao dịch...\n"));
 
     for (let i = 0; i < savedTransactionCount; i++) {
+        const wallet = wallets[Math.floor(Math.random() * wallets.length)]; // Chọn ngẫu nhiên một ví
         const recipient = addresses[Math.floor(Math.random() * addresses.length)];
         const amount = (Math.random() * (0.09 - 0.01) + 0.01).toFixed(4);
 
-        console.log(chalk.blueBright(`🔹 Giao dịch ${i + 1}/${savedTransactionCount}`));
+        console.log(chalk.blueBright(`🔹 Giao dịch ${i + 1}/${savedTransactionCount} từ ví ${wallet.address}`));
         console.log(chalk.cyan(`➡ Gửi ${chalk.green(amount + " ETH")} đến ${chalk.yellow(recipient)}`));
 
         try {
