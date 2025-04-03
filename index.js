@@ -75,7 +75,7 @@ async function deployContract() {
         return;
     }
 
-    const contractFactory = new ethers.ContractFactory(contractData.abi, contractData.evm.bytecode.object, wallets[0]); // Sử dụng ví đầu tiên
+    const contractFactory = new ethers.ContractFactory(contractData.abi, contractData.evm.bytecode.object, wallets[0]);
 
     console.log(chalk.yellow("⏳ Đang triển khai hợp đồng..."));
     try {
@@ -139,8 +139,20 @@ async function autoTransaction() {
         await new Promise(res => setTimeout(res, 5000));
     }
 
-    console.log(chalk.greenBright("\n🎉 Tất cả giao dịch đã hoàn tất! Chạy lại sau 24 giờ.\n"));
-    setTimeout(autoTransaction, 10000); // Khởi động lại sau 24 giờ
+    console.log(chalk.greenBright("\n🎉 Tất cả giao dịch đã hoàn tất!\n"));
+    // Xóa các giá trị đã lưu để yêu cầu nhập lại nếu chạy tiếp
+    savedOption = null;
+    savedTransactionCount = null;
+
+    // Hỏi người dùng có muốn lặp lại sau 24 giờ không
+    const repeat = await askQuestion(chalk.magenta("Bạn có muốn lặp lại sau 24 giờ không? (y/n): "));
+    if (repeat.toLowerCase() === "y") {
+        console.log(chalk.yellow("⏳ Đợi 24 giờ để chạy lại..."));
+        setTimeout(autoTransaction, 24 * 60 * 60 * 1000); // 24 giờ
+    } else {
+        console.log(chalk.greenBright("👋 Chương trình kết thúc."));
+        process.exit(0); // Thoát chương trình
+    }
 }
 
 // Hàm xử lý đầu vào của người dùng
@@ -158,7 +170,7 @@ async function startProcess() {
 
     console.log(chalk.magenta("\nChọn tùy chọn:"));
     console.log(chalk.yellow("1: Triển khai hợp đồng (Chỉ một lần)"));
-    console.log(chalk.yellow("2: Giao dịch tự động (Lặp lại mỗi 24 giờ)"));
+    console.log(chalk.yellow("2: Giao dịch tự động"));
 
     const choice = await askQuestion("Chọn: ");
 
