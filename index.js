@@ -19,9 +19,9 @@ let savedTransactionCount = null;
 // Hàm hiển thị banner ASCII
 function showBanner() {
     console.clear();
-    console.log(chalk.blueBright(figlet.textSync("NT - Exhaust", { horizontalLayout: "fitted" })));
-    console.log(chalk.greenBright("🔥 Được tạo bởi NT - Exhaust 🔥"));
-    console.log(chalk.greenBright("🔥 Telegram: https://t.me/@NTExhaust 🔥\n"));
+    console.log(chalk.blueBright(figlet.textSync("LocalSec", { horizontalLayout: "fitted" })));
+    console.log(chalk.greenBright("🔥 Được tạo bởi NT - Exhaust - Phát triển bởi: LocalSec 🔥"));
+    console.log(chalk.greenBright("🔥 https://x.com/Local_sec 🔥\n"));
 }
 
 // Hàm hiển thị thông tin tất cả các ví
