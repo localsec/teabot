@@ -21,7 +21,7 @@ function showBanner() {
     console.clear();
     console.log(chalk.blueBright(figlet.textSync("LocalSec", { horizontalLayout: "fitted" })));
     console.log(chalk.greenBright("🔥 Được tạo bởi NT - Exhaust, Phát triển bởi: LocalSec 🔥"));
-    console.log(chalk.greenBright("🔥 LocalSec 🔥\n"));
+    console.log(chalk.greenBright("🔥 Follow https://x.com/Local_sec 🔥\n"));
 }
 
 // Hàm hiển thị thông tin tất cả các ví
